@@ -19,4 +19,9 @@ export class WordController {
   deleteWord(@Param() { word }: { word: string }) {
     return this.wordService.deleteWord(word.toLowerCase());
   }
+
+  @Post('/search-words')
+  searchAnagrams(@Body() { letters }: { letters: string[] }) {
+    return this.wordService.searchForAnagrams(letters);
+  }
 }
