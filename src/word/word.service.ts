@@ -36,7 +36,9 @@ export class WordService {
 
     const anagrams = schuffle.getCombinations;
 
-    this.logger.log(`[SearchForAnagrams] Anagrams: ${anagrams}`);
+    this.logger.log(
+      `[SearchForAnagrams] ${anagrams.length} Anagrams: ${anagrams}`,
+    );
 
     const words = await this.getAll();
 
@@ -46,44 +48,54 @@ export class WordService {
         anagrams.some((anagram) => anagram.indexOf(word) !== -1),
     );
 
-    this.logger.log(`[SearchForAnagrams] Registered Words: ${registeredWords}`);
+    this.logger.log(
+      `[SearchForAnagrams] ${registeredWords.length} Registered Words: ${registeredWords}`,
+    );
 
     const unregisteredWords = anagrams.filter(
       (anagram) => !registeredWords.includes(anagram),
     );
 
     this.logger.log(
-      `[SearchForAnagrams] Unregistered Words: ${unregisteredWords}`,
+      `[SearchForAnagrams] ${unregisteredWords.length} Unregistered Words: ${unregisteredWords}`,
     );
 
-    const searchWordPromise = unregisteredWords.map((word) =>
-      Promise.resolve(this.searchIntoDicio(word)),
-    );
-    const searchIntoDicioResults: Array<boolean> = await Promise.all(
-      searchWordPromise,
-    );
+    // const searchWordPromise = unregisteredWords.map((word) =>
+    //   Promise.resolve(this.searchIntoDicio(word)),
+    // );
+    // const searchIntoDicioResults: Array<boolean> = await Promise.all(
+    //   searchWordPromise,
+    // );
 
     const withMeaning = [];
 
     const meaningless = [];
 
-    unregisteredWords.forEach((word, i) => {
-      if (searchIntoDicioResults[i]) {
-        withMeaning.push(word);
-      } else {
-        meaningless.push(word);
-      }
-    });
+    // unregisteredWords.forEach((word, i) => {
+    //   if (searchIntoDicioResults[i]) {
+    //     withMeaning.push(word);
+    //   } else {
+    //     meaningless.push(word);
+    //   }
+    // });
 
-    this.logger.log(`[SearchForAnagrams] With Meaning: ${withMeaning}`);
+    this.logger.log(
+      `[SearchForAnagrams] ${withMeaning.length} With Meaning: ${withMeaning}`,
+    );
 
-    this.logger.log(`[SearchForAnagrams] Meaningless: ${meaningless}`);
+    this.logger.log(
+      `[SearchForAnagrams] ${meaningless.length} Meaningless: ${meaningless}`,
+    );
 
     return {
-      registeredWords,
-      unregisteredWords: {
-        withMeaning,
-        meaningless,
+      totalItems: unregisteredWords.length + registeredWords.length,
+      data: {
+        registeredWords,
+        unregisteredWords,
+        // unregisteredWords: {
+        //   withMeaning,
+        //   meaningless,
+        // },
       },
     };
   }
