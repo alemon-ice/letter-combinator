@@ -16,9 +16,14 @@ export class WordService {
     return await this.wordModel.insertMany(createdWords);
   }
   async getAll() {
-    const allWords = await this.wordModel.find().exec();
+    const allWordsDocs = await this.wordModel.find().exec();
 
-    return allWords.map(({ word }) => word);
+    const allWords = allWordsDocs.map(({ word }) => word);
+
+    return {
+      totalItems: allWords.length,
+      data: allWords,
+    };
   }
   async deleteWord(word: string) {
     const findWord = await this.findWord(word);
@@ -40,7 +45,7 @@ export class WordService {
       `[SearchForAnagrams] ${anagrams.length} Anagrams: ${anagrams}`,
     );
 
-    const words = await this.getAll();
+    const { data: words } = await this.getAll();
 
     const registeredWords = words.filter(
       (word) =>
