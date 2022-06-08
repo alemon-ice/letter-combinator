@@ -1,27 +1,24 @@
+import { ISearchWordDto } from '../dtos/word.dto';
+
 export class Shuffle {
   private letters: string[] = [];
+  private lengths: number[] = [];
   private combinations: string[] = [];
 
   private shuffle() {
     const word = [...this.letters];
     const wordLength = word.length;
 
-    let totalAttempts = 0;
-
     do {
-      totalAttempts += 1;
       for (let i = wordLength - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         const tmp = word[i];
         word[i] = word[j];
         word[j] = tmp;
       }
-    } while (
-      !!this.combinations.includes(word.join('')) &&
-      totalAttempts <= 10
-    );
+    } while (!!this.combinations.includes(word.join('')));
 
-    totalAttempts <= 10 && this.combinations.push(word.join(''));
+    this.combinations.push(word.join(''));
   }
 
   private generateCombinations() {
@@ -36,6 +33,28 @@ export class Shuffle {
     for (let i = 0; i < totalCombinations; i++) {
       this.shuffle();
     }
+
+    this.combinations.forEach((combination) => {
+      const combinationLength = combination.length;
+      if (combinationLength > 3) {
+        for (let i = 1; i <= combinationLength - 3; i++) {
+          const newCombination = combination.slice(0, combinationLength - i);
+          if (
+            !this.lengths.length ||
+            (!!this.lengths.length &&
+              this.lengths.includes(newCombination.length))
+          ) {
+            this.combinations.push(newCombination);
+          }
+        }
+      }
+    });
+  }
+
+  private removeDuplicated(combinations: string[]) {
+    const combinationsSet = new Set<string>([]);
+    combinations.forEach((combination) => combinationsSet.add(combination));
+    return combinationsSet;
   }
 
   private sortWords(a: string, b: string) {
@@ -43,11 +62,12 @@ export class Shuffle {
   }
 
   public get getCombinations() {
-    return this.combinations.sort(this.sortWords);
+    return this.removeDuplicated(this.combinations.sort(this.sortWords));
   }
 
-  constructor(letters: string[]) {
+  constructor({ letters, lengths }: ISearchWordDto) {
     this.letters = letters;
+    this.lengths = lengths;
     this.generateCombinations();
   }
 }

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import fetch from 'node-fetch';
+import { ISearchWordDto } from './dtos/word.dto';
 import { Word, WordDocument } from './schemas/word.schema';
 import { Shuffle } from './util/shuffle';
 
@@ -9,8 +10,9 @@ import { Shuffle } from './util/shuffle';
 export class WordService {
   constructor(@InjectModel(Word.name) private wordModel: Model<WordDocument>) {}
   private readonly logger = new Logger();
-  async saveWords(words: string[]) {
-    const createdWords = words.map(
+  async saveWords(words: string) {
+    const splittedWords = words.split(' ');
+    const createdWords = splittedWords.map(
       (word) => new this.wordModel({ word: word.toLowerCase() }),
     );
     return await this.wordModel.insertMany(createdWords);
@@ -36,10 +38,13 @@ export class WordService {
 
     return await this.wordModel.deleteMany({ word });
   }
-  async searchForAnagrams(letters: string[]) {
-    const schuffle = new Shuffle(letters);
+  async searchForAnagrams({ letters, lengths }: ISearchWordDto) {
+    const schuffle = new Shuffle({ letters, lengths });
 
-    const anagrams = schuffle.getCombinations;
+    const anagrams: string[] = [];
+    schuffle.getCombinations.forEach((combination) =>
+      anagrams.push(combination),
+    );
 
     this.logger.log(
       `[SearchForAnagrams] ${anagrams.length} Anagrams: ${anagrams}`,
@@ -65,24 +70,24 @@ export class WordService {
       `[SearchForAnagrams] ${unregisteredWords.length} Unregistered Words: ${unregisteredWords}`,
     );
 
-    // const searchWordPromise = unregisteredWords.map((word) =>
-    //   Promise.resolve(this.searchIntoDicio(word)),
-    // );
-    // const searchIntoDicioResults: Array<boolean> = await Promise.all(
-    //   searchWordPromise,
-    // );
+    const searchWordPromise = unregisteredWords.map((word) =>
+      Promise.resolve(this.searchIntoDicio(word)),
+    );
+    const searchIntoDicioResults: Array<boolean> = await Promise.all(
+      searchWordPromise,
+    );
 
     const withMeaning = [];
 
     const meaningless = [];
 
-    // unregisteredWords.forEach((word, i) => {
-    //   if (searchIntoDicioResults[i]) {
-    //     withMeaning.push(word);
-    //   } else {
-    //     meaningless.push(word);
-    //   }
-    // });
+    unregisteredWords.forEach((word, i) => {
+      if (searchIntoDicioResults[i]) {
+        withMeaning.push(word);
+      } else {
+        meaningless.push(word);
+      }
+    });
 
     this.logger.log(
       `[SearchForAnagrams] ${withMeaning.length} With Meaning: ${withMeaning}`,
@@ -96,11 +101,10 @@ export class WordService {
       totalItems: unregisteredWords.length + registeredWords.length,
       data: {
         registeredWords,
-        unregisteredWords,
-        // unregisteredWords: {
-        //   withMeaning,
-        //   meaningless,
-        // },
+        unregisteredWords: {
+          withMeaning,
+          meaningless,
+        },
       },
     };
   }
@@ -108,9 +112,16 @@ export class WordService {
     return await this.wordModel.findOne({ word }).exec();
   }
   private async searchIntoDicio(word: string): Promise<boolean> {
-    const res = await fetch(`https://significado.herokuapp.com/v2/${word}`);
-    const data = await res.json();
-
-    return Array.isArray(data);
+    try {
+      const res = await fetch(`https://significado.herokuapp.com/v2/${word}`);
+      const data = await res.json();
+      return Array.isArray(data) && data[0].meanings.length;
+    } catch (err) {
+      this.logger.error(
+        `[SearchIntoDicio] ERROR: `,
+        JSON.stringify(err, null, 2),
+      );
+      return false;
+    }
   }
 }

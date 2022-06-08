@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { ISearchWordDto } from './dtos/word.dto';
 import { WordService } from './word.service';
 
 @Controller('word')
@@ -6,7 +7,7 @@ export class WordController {
   constructor(private wordService: WordService) {}
 
   @Post()
-  saveWords(@Body() { words }: { words: string[] }) {
+  saveWords(@Body() { words }: { words: string }) {
     return this.wordService.saveWords(words);
   }
 
@@ -21,7 +22,7 @@ export class WordController {
   }
 
   @Post('/search-words')
-  searchAnagrams(@Body() { letters }: { letters: string[] }) {
-    return this.wordService.searchForAnagrams(letters);
+  searchAnagrams(@Body() { letters, lengths }: ISearchWordDto) {
+    return this.wordService.searchForAnagrams({ letters, lengths });
   }
 }
