@@ -1,4 +1,5 @@
 import { ISearchWordDto } from '../dtos/word.dto';
+import { sortWords } from './sort';
 
 export class Shuffle {
   private letters: string[] = [];
@@ -57,12 +58,8 @@ export class Shuffle {
     return combinationsSet;
   }
 
-  private sortWords(a: string, b: string) {
-    return a < b ? -1 : 1;
-  }
-
   public get getCombinations() {
-    return this.removeDuplicated(this.combinations.sort(this.sortWords));
+    return this.removeDuplicated(this.combinations.sort(sortWords));
   }
 
   constructor({ letters, lengths }: ISearchWordDto) {

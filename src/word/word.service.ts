@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 import { ISearchWordDto } from './dtos/word.dto';
 import { Word, WordDocument } from './schemas/word.schema';
 import { Shuffle } from './util/shuffle';
+import { sortWords } from './util/sort';
 
 @Injectable()
 export class WordService {
@@ -12,7 +13,14 @@ export class WordService {
   private readonly logger = new Logger();
   async saveWords(words: string) {
     const splittedWords = words.split(' ');
-    const createdWords = splittedWords.map(
+
+    const { data: allSavedWords } = await this.getAll();
+
+    const wordsToSave = splittedWords.filter(
+      (word) => !allSavedWords.includes(word),
+    );
+
+    const createdWords = wordsToSave.map(
       (word) => new this.wordModel({ word: word.toLowerCase() }),
     );
     return await this.wordModel.insertMany(createdWords);
@@ -20,11 +28,11 @@ export class WordService {
   async getAll() {
     const allWordsDocs = await this.wordModel.find().exec();
 
-    const allWords = allWordsDocs.map(({ word }) => word);
+    const allWords: string[] = allWordsDocs.map(({ word }) => word);
 
     return {
       totalItems: allWords.length,
-      data: allWords,
+      data: allWords.sort(sortWords),
     };
   }
   async deleteWord(word: string) {
